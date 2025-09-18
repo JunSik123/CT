@@ -100,18 +100,27 @@ class MFDSClient:
 
         params = {
             "serviceKey": self.api_key,
-            "perPage": str(limit),
+            "pageNo": "1",
+            "numOfRows": str(limit),
+            "type": "json",
         }
         if item_seq:
             params["ITEM_SEQ"] = item_seq
+            params["item_seq"] = item_seq
         if color:
             params["COLOR_CLASS1"] = color
+            params["color_class1"] = color
         if shape:
             params["DRUG_SHAPE"] = shape
+            params["drug_shape"] = shape
         if imprint:
             params["PRINT_FRONT"] = imprint
+            params["PRINT_BACK"] = imprint
+            params["print_front"] = imprint
+            params["print_back"] = imprint
         if name:
             params["ITEM_NAME"] = name
+            params["item_name"] = name
 
         client = self._http_client or httpx.Client(timeout=10.0)
         close_client = self._http_client is None
@@ -123,24 +132,59 @@ class MFDSClient:
                 client.close()
 
         payload = response.json()
-        records = payload.get("data", [])
+        records = self._extract_records(payload)
         pills = [Pill(**self._normalize_remote_record(record)) for record in records]
         return pills[:limit]
 
     def _normalize_remote_record(self, record: dict) -> dict:
         """Normalize keys from the MFDS response payload into our schema."""
 
+        def _get(*keys: str) -> Optional[str]:
+            for key in keys:
+                if key in record and record[key] not in (None, ""):
+                    return record[key]
+            return None
+
+        imprint = _get("PRINT_FRONT", "printFront", "print_front") or _get(
+            "PRINT_BACK", "printBack", "print_back"
+        )
+
         return {
-            "pill_id": str(record.get("ITEM_SEQ", "")),
-            "name": record.get("ITEM_NAME", ""),
-            "imprint": record.get("PRINT_FRONT") or record.get("PRINT_BACK"),
-            "color": record.get("COLOR_CLASS1"),
-            "shape": record.get("DRUG_SHAPE"),
-            "manufacturer": record.get("ENTP_NAME"),
-            "ingredients": record.get("MAIN_ITEM_INGR"),
-            "image_url": record.get("ITEM_IMAGE"),
-            "description": record.get("CHART"),
+            "pill_id": str(
+                _get("ITEM_SEQ", "itemSeq", "ITEM_SEQ_NO", "item_seq") or ""
+            ),
+            "name": _get("ITEM_NAME", "itemName", "item_name") or "",
+            "imprint": imprint,
+            "color": _get("COLOR_CLASS1", "colorClass1", "color_class1"),
+            "shape": _get("DRUG_SHAPE", "drugShape", "drug_shape"),
+            "manufacturer": _get("ENTP_NAME", "entpName", "entp_name"),
+            "ingredients": _get("MAIN_ITEM_INGR", "mainItemIngr", "main_item_ingr"),
+            "image_url": _get("ITEM_IMAGE", "itemImage", "item_image"),
+            "description": _get("CHART", "chart"),
         }
+
+    def _extract_records(self, payload: dict) -> List[dict]:
+        """Extract pill records from a MFDS API JSON payload."""
+
+        # ``getMdcinGrnIdntfcInfoList02`` returns data under
+        # ``response.body.items``. When ``items`` contains a single element the
+        # API returns a dict instead of a list, so we normalize it here.
+        records = payload
+        for key in ("data", "response"):
+            if isinstance(records, dict) and key in records:
+                records = records[key]
+        if isinstance(records, dict) and "body" in records:
+            records = records["body"]
+        if isinstance(records, dict) and "items" in records:
+            records = records["items"]
+
+        if not records:
+            return []
+        if isinstance(records, dict):
+            return [records]
+        if isinstance(records, list):
+            return records
+        return []
 
     # ------------------------------------------------------------------
     # Local dataset implementation (no network needed)

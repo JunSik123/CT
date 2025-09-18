@@ -13,10 +13,12 @@
 
 ## 로컬 실행 방법
 
-1. (선택) 실제 MFDS API를 사용하려면 `.env` 파일에 아래 값을 설정하세요.
+1. (선택) 실제 MFDS API(`https://apis.data.go.kr/1471000/MdcinGrnIdntfcInfoService02/getMdcinGrnIdntfcInfoList02`)를 사용하려면 `.env` 파일에 아래 값을 설정하세요.
    ```env
    PILL_ID_MFDS_API_KEY=발급받은_API_KEY
    ```
+   예: 데이터포털에서 발급받은 일반 인증키 `9lAsn5GBHw/tSBCo3XE4uPq7T4nZu0NiM8UPaayX3E+PK64xU59HLAcFW8nczk2RENnFIzW5DLcHOdtxIcehtw==`
+   를 그대로 사용할 수 있습니다.
 2. 필요한 패키지를 설치합니다.
    ```bash
    pip install -r requirements.txt

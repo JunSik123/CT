@@ -18,7 +18,7 @@ class Settings(BaseSettings):
         ),
     )
     mfds_base_url: str = Field(
-        default="https://api.odcloud.kr/api/15049680/v1/uddi:1fb7f4d7-66ec-4ff0-9d8c-bcc796f9649a",
+        default="https://apis.data.go.kr/1471000/MdcinGrnIdntfcInfoService02/getMdcinGrnIdntfcInfoList02",
         description="Base URL for the MFDS pill identification API endpoint.",
     )
     gpt_model: str = Field(
