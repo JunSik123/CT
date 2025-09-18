@@ -1,0 +1,35 @@
+[
+  {
+    "pill_id": "mfds-0001",
+    "name": "아세트아미노펜 정 500mg",
+    "imprint": "AP500",
+    "color": "white",
+    "shape": "round",
+    "manufacturer": "가상의제약",
+    "ingredients": "Acetaminophen 500mg",
+    "image_url": "https://example.com/pills/ap500.png",
+    "description": "흰색의 원형 정제로 한쪽 면에 AP500이 각인되어 있습니다."
+  },
+  {
+    "pill_id": "mfds-0002",
+    "name": "이부프로펜 캡슐 200mg",
+    "imprint": "IBU",
+    "color": "red",
+    "shape": "capsule",
+    "manufacturer": "건강제약",
+    "ingredients": "Ibuprofen 200mg",
+    "image_url": "https://example.com/pills/ibu200.png",
+    "description": "적색/투명 경질 캡슐제로 IBU가 표기되어 있습니다."
+  },
+  {
+    "pill_id": "mfds-0003",
+    "name": "로라타딘 정 10mg",
+    "imprint": "LT10",
+    "color": "white",
+    "shape": "oval",
+    "manufacturer": "봄제약",
+    "ingredients": "Loratadine 10mg",
+    "image_url": "https://example.com/pills/lt10.png",
+    "description": "흰색의 타원형 정제로 중앙에 LT10 문자가 각인되어 있습니다."
+  }
+]
