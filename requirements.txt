@@ -5,7 +5,7 @@ aiohttp==3.10.5
 tqdm==4.66.5
 sqlalchemy==2.0.35
 aiosqlite==0.20.0
-numpy==2.1.1
+numpy==1.26.4
 scipy==1.13.1
 pandas==2.2.2
 scikit-image==0.24.0
