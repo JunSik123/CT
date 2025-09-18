@@ -28,7 +28,7 @@ def _tls12_connector() -> aiohttp.TCPConnector:
         context = ssl.create_default_context()
         if hasattr(ssl, "TLSVersion"):
             try:
-                context.minimum_version = ssl.TLSVersion.TLSv1
+                context.minimum_version = ssl.TLSVersion.TLSv1_2
             except ValueError:
                 pass
             try:
@@ -37,6 +37,8 @@ def _tls12_connector() -> aiohttp.TCPConnector:
                 pass
         else:
             context.options |= getattr(ssl, "OP_NO_TLSv1_3", 0)
+            context.options |= getattr(ssl, "OP_NO_TLSv1_1", 0)
+            context.options |= getattr(ssl, "OP_NO_TLSv1", 0)
         return aiohttp.TCPConnector(ssl=context)
     except Exception:
         return aiohttp.TCPConnector(ssl=False)
