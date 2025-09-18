@@ -23,25 +23,49 @@ BASE_URL = (
 )
 
 
-def _tls12_connector() -> aiohttp.TCPConnector:
+def _mfds_connector() -> aiohttp.TCPConnector:
+    """Build a connector that can negotiate with MFDS' legacy TLS stack.
+
+    The public data portal that hosts the pill identification API still relies on
+    an older TLS configuration.  Python 3.12 ships with OpenSSL 3, which raises
+    the default security level and refuses to talk to servers that only support
+    weak cipher suites.  Windows users would then hit the ``SSLV3_ALERT_ILLEGAL_PARAMETER``
+    failure that the user reported.  We explicitly relax the cipher selection and
+    allow TLS 1.0–1.2 while keeping certificate validation in place so ingestion
+    remains functional on modern interpreters.
+    """
+
     try:
         context = ssl.create_default_context()
+
+        # Allow talking to servers that only expose legacy ciphers by lowering the
+        # OpenSSL security level.  If the interpreter was built against an older
+        # OpenSSL that does not understand the directive we simply skip it.
+        try:
+            context.set_ciphers("DEFAULT@SECLEVEL=1")
+        except ssl.SSLError:
+            pass
+
+        # Explicitly negotiate TLS 1.0 – TLS 1.2 and disable TLS 1.3 so OpenSSL 3
+        # does not abort the handshake before the legacy server can respond.
         if hasattr(ssl, "TLSVersion"):
             try:
-                context.minimum_version = ssl.TLSVersion.TLSv1_2
+                context.minimum_version = ssl.TLSVersion.TLSv1
             except ValueError:
                 pass
             try:
                 context.maximum_version = ssl.TLSVersion.TLSv1_2
             except ValueError:
                 pass
-        else:
-            context.options |= getattr(ssl, "OP_NO_TLSv1_3", 0)
-            context.options |= getattr(ssl, "OP_NO_TLSv1_1", 0)
-            context.options |= getattr(ssl, "OP_NO_TLSv1", 0)
+        context.options |= getattr(ssl, "OP_NO_TLSv1_3", 0)
+        context.options |= getattr(ssl, "OP_LEGACY_SERVER_CONNECT", 0)
+
         return aiohttp.TCPConnector(ssl=context)
     except Exception:
-        return aiohttp.TCPConnector(ssl=False)
+        # Fall back to aiohttp's default behaviour if customising the SSL context
+        # fails for any reason.  This still gives the caller a functional session,
+        # albeit without the compatibility tweaks above.
+        return aiohttp.TCPConnector()
 
 
 def _clean(value: Any, default: Any = "") -> Any:
@@ -98,7 +122,7 @@ async def ingest_all() -> None:
 
     await init_db()
 
-    async with aiohttp.ClientSession(connector=_tls12_connector()) as client:
+    async with aiohttp.ClientSession(connector=_mfds_connector()) as client:
         first_page = await _fetch_page(client, 1)
         total, items = _parse_items(first_page)
         rows = 100
@@ -148,7 +172,7 @@ async def _upsert_drug(session: AsyncSession, item: Dict[str, Any]) -> None:
 async def download_images() -> None:
     await init_db()
 
-    async with aiohttp.ClientSession(connector=_tls12_connector()) as client:
+    async with aiohttp.ClientSession(connector=_mfds_connector()) as client:
         async with AsyncSessionLocal() as session:
             result = await session.execute(
                 select(Drug).where(Drug.image_url.is_not(None))
