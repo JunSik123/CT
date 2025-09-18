@@ -19,7 +19,7 @@
    ```
    예: 데이터포털에서 발급받은 일반 인증키 `9lAsn5GBHw/tSBCo3XE4uPq7T4nZu0NiM8UPaayX3E+PK64xU59HLAcFW8nczk2RENnFIzW5DLcHOdtxIcehtw==`
    를 그대로 사용할 수 있습니다.
-2. 필요한 패키지를 설치합니다.
+2. 필요한 패키지를 설치합니다. (이미지 업로드 처리를 위해 `python-multipart` 패키지가 함께 설치됩니다.)
    ```bash
    pip install -r requirements.txt
    ```
