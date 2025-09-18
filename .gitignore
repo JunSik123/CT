@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+/data/images/*
+!/data/images/.gitkeep
+/data/index/*
+!/data/index/.gitkeep
+/db/pillid.sqlite
