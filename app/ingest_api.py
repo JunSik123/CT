@@ -1,6 +1,7 @@
 import asyncio
 import math
 import os
+import ssl
 from pathlib import Path
 from typing import Any, Dict, Iterable, Tuple
 
@@ -20,6 +21,25 @@ BASE_URL = (
     "https://apis.data.go.kr/1471000/MdcinGrnIdntfcInfoService02/"
     "getMdcinGrnIdntfcInfoList02"
 )
+
+
+def _tls12_connector() -> aiohttp.TCPConnector:
+    try:
+        context = ssl.create_default_context()
+        if hasattr(ssl, "TLSVersion"):
+            try:
+                context.minimum_version = ssl.TLSVersion.TLSv1
+            except ValueError:
+                pass
+            try:
+                context.maximum_version = ssl.TLSVersion.TLSv1_2
+            except ValueError:
+                pass
+        else:
+            context.options |= getattr(ssl, "OP_NO_TLSv1_3", 0)
+        return aiohttp.TCPConnector(ssl=context)
+    except Exception:
+        return aiohttp.TCPConnector(ssl=False)
 
 
 def _clean(value: Any, default: Any = "") -> Any:
@@ -76,7 +96,7 @@ async def ingest_all() -> None:
 
     await init_db()
 
-    async with aiohttp.ClientSession() as client:
+    async with aiohttp.ClientSession(connector=_tls12_connector()) as client:
         first_page = await _fetch_page(client, 1)
         total, items = _parse_items(first_page)
         rows = 100
@@ -126,7 +146,7 @@ async def _upsert_drug(session: AsyncSession, item: Dict[str, Any]) -> None:
 async def download_images() -> None:
     await init_db()
 
-    async with aiohttp.ClientSession() as client:
+    async with aiohttp.ClientSession(connector=_tls12_connector()) as client:
         async with AsyncSessionLocal() as session:
             result = await session.execute(
                 select(Drug).where(Drug.image_url.is_not(None))
